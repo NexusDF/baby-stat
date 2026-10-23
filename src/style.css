@@ -167,15 +167,16 @@ h2 {
 
 .stage {
   position: relative;
-  height: min(36vh, 340px);
-  min-height: 240px;
+  height: min(44vh, 420px);
+  min-height: 280px;
   user-select: none;
+  overflow: hidden;
 }
 
 .stage-glow {
   position: absolute;
   left: 50%;
-  top: 46%;
+  top: 48%;
   width: min(280px, 70%);
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
@@ -184,26 +185,30 @@ h2 {
   pointer-events: none;
 }
 
-.stage-host {
+.stage-frame {
   position: absolute;
   inset: 0;
+  display: grid;
+  place-items: center;
 }
 
-.stage-host canvas {
-  cursor: grab;
-}
-
-.stage-host canvas:active { cursor: grabbing; }
-
-.stage-hint {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  margin: 0;
-  text-align: center;
-  font-size: 13px;
+.stage-art {
+  width: min(78%, 340px);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  transform: scale(var(--scale, 1));
+  transform-origin: center 58%;
+  opacity: 0;
+  transition: opacity 0.28s ease, transform 0.35s ease;
   pointer-events: none;
+  filter: drop-shadow(0 22px 18px rgba(92, 48, 40, 0.08));
+}
+
+.stage-art.on { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-art { transition: none; }
 }
 
 .scrub { display: grid; gap: 4px; }

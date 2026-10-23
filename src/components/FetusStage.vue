@@ -1,40 +1,37 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { createStage } from '../lib/fetusStage.js'
+import { computed, ref, watch } from 'vue'
+import { visualScale, weekArt } from '../lib/weekArt.js'
 
 const props = defineProps({
   week: { type: Number, required: true },
   spanMm: { type: Number, required: true },
 })
 
-const host = ref(null)
-const failed = ref(false)
-const hint = ref(true)
-let stage = null
+const src = computed(() => weekArt(props.week))
+const scale = computed(() => visualScale(props.spanMm))
+const ready = ref(false)
 
-onMounted(() => {
-  stage = createStage(host.value, {
-    onFail: () => { failed.value = true },
-    onInteract: () => { hint.value = false },
-  })
-  stage?.setWeek(props.week, props.spanMm)
+watch(src, () => {
+  ready.value = false
 })
 
-watch(() => [props.week, props.spanMm], ([week, spanMm]) => {
-  stage?.setWeek(week, spanMm)
-})
-
-onBeforeUnmount(() => {
-  stage?.dispose()
-  stage = null
-})
+function onLoad() {
+  ready.value = true
+}
 </script>
 
 <template>
   <div class="stage">
     <div class="stage-glow" aria-hidden="true"></div>
-    <div ref="host" class="stage-host"></div>
-    <p v-if="failed" class="stage-hint">Не удалось показать 3D в этом браузере. Цифры ниже на месте.</p>
-    <p v-else-if="hint" class="stage-hint">Потяните, чтобы повернуть</p>
+    <div class="stage-frame" :style="{ '--scale': scale }">
+      <img
+        class="stage-art"
+        :class="{ on: ready }"
+        :src="src"
+        :alt="`Иллюстрация малыша на ${week}-й неделе беременности`"
+        draggable="false"
+        @load="onLoad"
+      >
+    </div>
   </div>
 </template>
