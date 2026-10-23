@@ -87,7 +87,7 @@ watch(lmp, (value) => {
 })
 
 watchEffect(() => {
-  document.title = `${weeksPhrase(selectedWeek.value)} — размер малыша`
+  document.title = `Булочка · ${weeksPhrase(selectedWeek.value)}`
 })
 
 function goToday() {
