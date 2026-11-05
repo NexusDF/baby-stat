@@ -1,5 +1,5 @@
 <script setup>
-import { formatLength, formatWeight, measureHint, measureLabel, sizeLine } from '../lib/pregnancy.js'
+import { formatLength, formatWeight, lengthHint, lengthLabel } from '../lib/pregnancy.js'
 
 defineProps({
   info: { type: Object, required: true },
@@ -7,29 +7,37 @@ defineProps({
 </script>
 
 <template>
-  <section class="panel" :aria-label="`Неделя ${info.week}`">
+  <section id="week-panel" class="panel" :aria-label="`Неделя ${info.week}`">
     <div class="stats">
+      <article class="stat">
+        <p class="stat-label">{{ lengthLabel(info.week) }}</p>
+        <p class="stat-value">{{ formatLength(info.lengthCm) }}</p>
+        <p class="stat-hint">{{ lengthHint(info.week) }}</p>
+      </article>
       <article class="stat">
         <p class="stat-label">Вес</p>
         <p class="stat-value">{{ formatWeight(info.weightG) }}</p>
         <p class="stat-hint">средний ориентир</p>
       </article>
-      <article class="stat">
-        <p class="stat-label">{{ measureLabel(info.measure) }}</p>
-        <p class="stat-value">{{ formatLength(info.mm) }}</p>
-        <p class="stat-hint">{{ measureHint(info.measure) }}</p>
+      <article class="stat stat-wide">
+        <p class="stat-label">Размер</p>
+        <p class="stat-value stat-compare">Примерно {{ info.sizeComparison }}</p>
       </article>
     </div>
 
-    <p v-if="info.week >= 14 && info.week <= 15" class="switch-note">
-      С 14-й недели здесь полный рост, от макушки до пяток. Раньше показывали КТР — он короче, это другой замер.
+    <p v-if="info.week === 20" class="switch-note">
+      До этой недели в карточке был КТР — от макушки до копчика, без ножек. С 20-й недели указана длина от макушки до пяток, поэтому число больше. Это смена замера, а не резкий скачок за неделю.
     </p>
 
-    <p class="compare">{{ sizeLine(info) }}</p>
-    <h2>На этой неделе</h2>
-    <p class="summary">{{ info.summary }}</p>
+    <h2>Что происходит с малышом</h2>
+    <p class="summary">{{ info.babyDescription }}</p>
+
+    <h2>Что происходит с мамой</h2>
+    <p class="summary">{{ info.momDescription }}</p>
+
+    <h2>Совет недели</h2>
     <ul>
-      <li v-for="point in info.points" :key="point">{{ point }}</li>
+      <li v-for="point in info.tip" :key="point">{{ point }}</li>
     </ul>
   </section>
 </template>

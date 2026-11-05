@@ -1,37 +1,39 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { visualScale, weekArt } from '../lib/weekArt.js'
 
 const props = defineProps({
   week: { type: Number, required: true },
-  spanMm: { type: Number, required: true },
+  imageName: { type: String, required: true },
+  direction: { type: Number, default: 1 },
 })
 
-const src = computed(() => weekArt(props.week))
-const scale = computed(() => visualScale(props.spanMm))
-const ready = ref(false)
-
-watch(src, () => {
-  ready.value = false
-})
-
-function onLoad() {
-  ready.value = true
-}
+const src = computed(() => weekArt(props.imageName, props.week))
+const scale = computed(() => visualScale(props.week))
+const alt = computed(() => `Иллюстрация малыша на ${props.week}-й неделе беременности`)
 </script>
 
 <template>
   <div class="stage">
     <div class="stage-glow" aria-hidden="true"></div>
-    <div class="stage-frame" :style="{ '--scale': scale }">
-      <img
-        class="stage-art"
-        :class="{ on: ready }"
-        :src="src"
-        :alt="`Иллюстрация малыша на ${week}-й неделе беременности`"
-        draggable="false"
-        @load="onLoad"
-      >
+    <div
+      class="stage-frame"
+      :style="{ '--scale': scale, '--dir': direction }"
+    >
+      <Transition name="week-swap">
+        <div :key="src" class="stage-slot">
+          <div class="stage-plate">
+            <img
+              class="stage-art"
+              :src="src"
+              :alt="alt"
+              draggable="false"
+              width="1024"
+              height="1024"
+            >
+          </div>
+        </div>
+      </Transition>
     </div>
   </div>
 </template>

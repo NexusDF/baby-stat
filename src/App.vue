@@ -1,158 +1,233 @@
 <script setup>
 import { computed, ref, watch, watchEffect } from 'vue'
 import FetusStage from './components/FetusStage.vue'
+import TermSetup from './components/TermSetup.vue'
+import WeekList from './components/WeekList.vue'
 import WeekPanel from './components/WeekPanel.vue'
+import WeekStrip from './components/WeekStrip.vue'
 import { getWeek } from './data/weeks.js'
 import {
-  focusWeek,
+  countdownPhrase,
   formatDate,
-  gestationalAge,
+  interpretTerm,
   parseISODate,
-  toISODate,
+  termMessage,
   trimesterName,
   trimesterSegments,
   weeksPhrase,
 } from './lib/pregnancy.js'
 
-const STORAGE_KEY = 'baby-stat-lmp'
+const STORAGE_KEY = 'baby-stat-term'
+const LEGACY_KEY = 'baby-stat-lmp'
+const SWIPE_MIN = 56
 
-function readLmp() {
+function readTerm() {
   try {
-    const value = localStorage.getItem(STORAGE_KEY) || ''
-    return parseISODate(value) ? value : ''
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if ((parsed.source === 'lmp' || parsed.source === 'edd') && (parsed.iso === '' || parseISODate(parsed.iso))) {
+        return { source: parsed.source, iso: parsed.iso || '' }
+      }
+    }
+    const legacy = localStorage.getItem(LEGACY_KEY) || ''
+    if (parseISODate(legacy)) return { source: 'lmp', iso: legacy }
   } catch {
-    return ''
+    // Срок останется примером, пока дату не введут снова.
   }
+  return { source: 'lmp', iso: '' }
 }
 
-function writeLmp(value) {
+function writeTerm(source, iso) {
   try {
-    if (value) localStorage.setItem(STORAGE_KEY, value)
-    else localStorage.removeItem(STORAGE_KEY)
+    if (!iso) {
+      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(LEGACY_KEY)
+      return
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ source, iso }))
+    localStorage.removeItem(LEGACY_KEY)
   } catch {
     // Дата останется только на этот визит.
   }
 }
 
-const lmp = ref(readLmp())
-const selectedWeek = ref(focusWeek(lmp.value) ?? 12)
-const todayIso = toISODate(new Date())
+const stored = readTerm()
+const source = ref(stored.source)
+const iso = ref(stored.iso)
+const view = ref('week')
+const slideDir = ref(1)
+const term = computed(() => interpretTerm(source.value, iso.value))
+const selectedWeek = ref(term.value.focus ?? 12)
 
-const age = computed(() => (lmp.value ? gestationalAge(lmp.value) : null))
 const info = computed(() => getWeek(selectedWeek.value))
 const segments = computed(() => trimesterSegments(selectedWeek.value))
-const sliderProgress = computed(() => (selectedWeek.value - 4) / 36)
+const message = computed(() => termMessage(term.value, selectedWeek.value))
 
 const title = computed(() => {
-  if (age.value && age.value.days >= 0 && age.value.weeks === selectedWeek.value) {
-    return weeksPhrase(selectedWeek.value, age.value.extra)
+  const current = term.value
+  if (current.status === 'ok' && current.weeks === selectedWeek.value && current.weeks >= 4 && current.weeks <= 40) {
+    return weeksPhrase(selectedWeek.value, current.extra)
   }
   return weeksPhrase(selectedWeek.value)
 })
 
 const modeLabel = computed(() => {
-  if (!lmp.value) return 'Пример'
-  if (age.value && age.value.days >= 0 && age.value.weeks === selectedWeek.value) return 'Сейчас'
-  if (age.value && age.value.weeks > 40 && selectedWeek.value === 40) return 'Сейчас'
-  if (age.value && age.value.weeks < 4 && selectedWeek.value === 4) return 'Сейчас'
+  const current = term.value
+  if (current.status !== 'ok') return 'Пример'
+  if (current.weeks < 4 || current.weeks > 40) return 'Ориентир'
+  if (current.weeks === selectedWeek.value) return 'Сейчас'
   return 'Просмотр'
 })
 
-const ageNote = computed(() => {
-  if (!lmp.value || !age.value) return ''
-  if (age.value.days < 0) return 'Эта дата ещё не наступила. Нужен первый день последних месячных.'
-  if (age.value.weeks < 4) {
-    return `По этой дате сейчас ${weeksPhrase(age.value.weeks, age.value.extra)}. Модель и размеры начинаются с 4-й недели.`
-  }
-  if (age.value.weeks > 40 && selectedWeek.value === 40) {
-    return `По этой дате ${weeksPhrase(age.value.weeks, age.value.extra)}. Здесь ориентиры 40-й недели.`
-  }
-  if (age.value.weeks !== selectedWeek.value && age.value.weeks <= 40) {
-    return `Сейчас ${weeksPhrase(age.value.weeks, age.value.extra)}.`
-  }
-  return ''
+const canReturn = computed(() => term.value.focus != null && term.value.focus !== selectedWeek.value)
+
+watch([source, iso], () => {
+  writeTerm(source.value, iso.value)
+  if (term.value.focus) selectWeek(term.value.focus)
 })
 
-const canReturn = computed(() => {
-  const week = focusWeek(lmp.value)
-  return week != null && week !== selectedWeek.value
-})
-
-const dueLabel = computed(() => (age.value && age.value.days >= 0 ? formatDate(age.value.due) : ''))
-
-watch(lmp, (value) => {
-  writeLmp(value)
-  const week = focusWeek(value)
-  if (week) selectedWeek.value = week
+watch(view, () => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
 })
 
 watchEffect(() => {
-  document.title = `Булочка · ${weeksPhrase(selectedWeek.value)}`
+  const names = { week: title.value, list: 'все недели', term: 'срок' }
+  document.title = `Булочка · ${names[view.value]}`
 })
 
-function goToday() {
-  const week = focusWeek(lmp.value)
-  if (week) selectedWeek.value = week
+function selectWeek(week) {
+  const next = Math.min(40, Math.max(4, Math.round(Number(week))))
+  if (!Number.isFinite(next) || next === selectedWeek.value) return
+  slideDir.value = next > selectedWeek.value ? 1 : -1
+  selectedWeek.value = next
+}
+
+function openWeek(week) {
+  selectWeek(week)
+  view.value = 'week'
+}
+
+let gesture = null
+
+function onTouchStart(event) {
+  if (event.target.closest('button, a, input, textarea, label, .week-strip')) return
+  const touch = event.changedTouches[0]
+  gesture = { x: touch.clientX, y: touch.clientY }
+}
+
+function onTouchEnd(event) {
+  if (!gesture) return
+  const touch = event.changedTouches[0]
+  const dx = touch.clientX - gesture.x
+  const dy = touch.clientY - gesture.y
+  gesture = null
+  if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.2) return
+  selectWeek(selectedWeek.value + (dx < 0 ? 1 : -1))
+}
+
+function onTouchCancel() {
+  gesture = null
 }
 </script>
 
 <template>
   <main class="shell">
-    <header class="top">
-      <p class="eyebrow">
-        <span>{{ modeLabel }}</span>
-        <span class="eyebrow-dot" aria-hidden="true"></span>
-        <span>{{ trimesterName(selectedWeek) }}</span>
-      </p>
-      <h1>{{ title }}</h1>
-      <div class="tri" role="img" :aria-label="trimesterName(selectedWeek)">
-        <div v-for="part in segments" :key="part.id" class="tri-seg" :class="{ on: part.active }">
-          <div class="tri-track">
-            <div class="tri-fill" :style="{ width: `${part.fill * 100}%` }"></div>
+    <p class="brand">Булочка</p>
+    <nav class="bar" aria-label="Разделы">
+      <button type="button" :aria-current="view === 'week' ? 'page' : undefined" @click="view = 'week'">Неделя</button>
+      <button type="button" :aria-current="view === 'list' ? 'page' : undefined" @click="view = 'list'">Все недели</button>
+      <button type="button" :aria-current="view === 'term' ? 'page' : undefined" @click="view = 'term'">Срок</button>
+    </nav>
+
+    <template v-if="view === 'week'">
+      <header class="top">
+        <p class="eyebrow">
+          <span>{{ modeLabel }}</span>
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span>{{ trimesterName(selectedWeek) }}</span>
+        </p>
+        <h1>{{ title }}</h1>
+        <div class="tri" role="img" :aria-label="trimesterName(selectedWeek)">
+          <div v-for="part in segments" :key="part.id" class="tri-seg" :class="{ on: part.active }">
+            <div class="tri-track">
+              <div class="tri-fill" :style="{ width: `${part.fill * 100}%` }"></div>
+            </div>
+            <span>{{ part.label }}</span>
           </div>
-          <span>{{ part.label }}</span>
         </div>
+        <p v-if="term.status === 'ok'" class="countdown">
+          {{ countdownPhrase(term.countdown) }}
+          <span> · ПДР {{ formatDate(term.due) }}</span>
+        </p>
+        <p v-else-if="term.status === 'empty'" class="due">Укажите дату во вкладке «Срок» — тогда откроется ваша неделя и отсчёт до родов.</p>
+        <p v-if="message" class="age-note">{{ message }}</p>
+      </header>
+
+      <div
+        class="swipe-zone"
+        @touchstart.passive="onTouchStart"
+        @touchend="onTouchEnd"
+        @touchcancel="onTouchCancel"
+      >
+        <div class="stage-wrap">
+          <button
+            class="chevron prev"
+            type="button"
+            aria-label="Предыдущая неделя"
+            :disabled="selectedWeek <= 4"
+            @click="selectWeek(selectedWeek - 1)"
+          >
+            ‹
+          </button>
+          <FetusStage :week="selectedWeek" :image-name="info.imageName" :direction="slideDir" />
+          <button
+            class="chevron next"
+            type="button"
+            aria-label="Следующая неделя"
+            :disabled="selectedWeek >= 40"
+            @click="selectWeek(selectedWeek + 1)"
+          >
+            ›
+          </button>
+        </div>
+
+        <WeekStrip
+          :selected="selectedWeek"
+          :marker="term.status === 'ok' ? term.focus : null"
+          @select="selectWeek"
+        />
+
+        <WeekPanel :info="info" />
       </div>
 
-      <p v-if="dueLabel" class="due">Предполагаемые роды {{ dueLabel }}</p>
-      <p v-else-if="!lmp" class="due">Это пример. Дату месячных можно указать под карточкой — тогда откроется ваш срок.</p>
-      <p v-if="ageNote" class="age-note">{{ ageNote }}</p>
-    </header>
+      <button v-if="canReturn" class="today" type="button" @click="selectWeek(term.focus)">
+        К моему сроку
+      </button>
+    </template>
 
-    <FetusStage :week="selectedWeek" :span-mm="info.spanMm" />
+    <template v-else-if="view === 'list'">
+      <header class="top">
+        <h1>Все недели</h1>
+        <p class="due">С 4-й по 40-ю. Нажмите карточку, чтобы открыть неделю.</p>
+      </header>
+      <WeekList :selected="selectedWeek" @select="openWeek" />
+    </template>
 
-    <div class="scrub">
-      <label>
-        <span class="sr">Неделя беременности</span>
-        <input
-          v-model.number="selectedWeek"
-          type="range"
-          min="4"
-          max="40"
-          step="1"
-          :style="{ '--p': sliderProgress }"
-          :aria-valuetext="weeksPhrase(selectedWeek)"
-        >
-      </label>
-      <div class="scale" aria-hidden="true">
-        <span class="edge-start">4</span>
-        <span :style="{ left: `${(9 / 36) * 100}%` }">13</span>
-        <span :style="{ left: `${(23 / 36) * 100}%` }">27</span>
-        <span class="edge-end">40</span>
-      </div>
-      <button v-if="canReturn" class="today" type="button" @click="goToday">К моему сроку</button>
-    </div>
+    <TermSetup
+      v-else
+      :source="source"
+      :iso="iso"
+      @update:source="source = $event"
+      @update:iso="iso = $event"
+    />
 
-    <WeekPanel :info="info" />
-
-    <label class="lmp">
-      <span>Первый день последних месячных</span>
-      <input v-model="lmp" type="date" name="lmp" :max="todayIso">
-    </label>
+    <p v-if="view === 'term' && message" class="age-note">{{ message }}</p>
 
     <p class="disclaimer">
-      Цифры — средние ориентиры, не замена УЗИ. Размер и вес у каждого свои, их смотрит врач.
-      Картинка показывает примерный вид на этом сроке и на экране увеличена. Это не снимок УЗИ.
+      Информация носит ознакомительный характер и не заменяет консультацию врача.
+      Рост, вес и сравнения — средние ориентиры, у каждого малыша они свои.
     </p>
   </main>
 </template>
