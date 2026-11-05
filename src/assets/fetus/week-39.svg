@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Заглушка иллюстрации, неделя 39">
+  <rect width="1024" height="1024" fill="#f6e6dc"/>
+  <ellipse cx="512" cy="560" rx="300" ry="250" fill="#f8d4cb" opacity="0.5"/>
+  <g transform="translate(512 545) scale(1.45) rotate(-12.0)">
+    <path d="M18 36 C 78 8, 62 -36, 108 -18" fill="none" stroke="#f0b8ae" stroke-width="14" stroke-linecap="round"/>
+    <ellipse cx="6" cy="36" rx="74.0" ry="80.0" fill="#f3b7ad"/>
+    <ellipse cx="18" cy="52" rx="50.3" ry="46.4" fill="#f7c6bc"/>
+    <circle cx="24" cy="-62" r="70.0" fill="#f6c3b8"/>
+    <ellipse cx="-43.4" cy="-58" rx="14" ry="20" fill="#f0b3a8"/>
+    <path d="M-2 -74 q 16 9 30 0" fill="none" stroke="#d98984" stroke-width="4" stroke-linecap="round"/>
+    <path d="M34 -66 q 10 6 16 0" fill="none" stroke="#e09a94" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="-24" cy="98" rx="20.0" ry="40.0" fill="#f3b7ad" transform="rotate(24 -24 98)"/>
+    <ellipse cx="42" cy="104" rx="18.0" ry="34.0" fill="#f6c3b8" transform="rotate(-16 42 104)"/>
+    <ellipse cx="58" cy="6" rx="16.0" ry="30.0" fill="#f6c3b8" transform="rotate(-48 58 6)"/>
+    <circle cx="-36" cy="132" r="10.0" fill="#f6c3b8"/>
+    <circle cx="64" cy="138" r="10.0" fill="#f3b7ad"/>
+  </g>
+</svg>

@@ -19,7 +19,7 @@ export default defineConfig({
       manifest: {
         name: 'Булочка',
         short_name: 'Булочка',
-        description: 'Размер малыша по неделям беременности',
+        description: 'Развитие малыша по неделям беременности',
         lang: 'ru',
         theme_color: '#f3ebe3',
         background_color: '#f3ebe3',
