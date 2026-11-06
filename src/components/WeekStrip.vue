@@ -1,4 +1,5 @@
 <script setup>
+import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { nextTick, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -17,13 +18,25 @@ function chipLabel(week) {
   return parts.join(', ')
 }
 
+function stripEl() {
+  const node = scroller.value
+  if (!node) return null
+  if (node instanceof HTMLElement) return node
+  return node.$el instanceof HTMLElement ? node.$el : null
+}
+
 function center(week, smooth) {
-  const root = scroller.value
+  const root = stripEl()
   const chip = root?.querySelector(`[data-week="${week}"]`)
   if (!root || !chip) return
   const left = chip.offsetLeft - (root.clientWidth - chip.offsetWidth) / 2
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   root.scrollTo({ left, behavior: smooth && !reduce ? 'smooth' : 'auto' })
+}
+
+function onSelect(week) {
+  const next = Number(week)
+  if (Number.isFinite(next)) emit('select', next)
 }
 
 function onKeydown(event) {
@@ -33,7 +46,7 @@ function onKeydown(event) {
   const next = Math.min(40, Math.max(4, props.selected + delta))
   emit('select', next)
   nextTick(() => {
-    scroller.value?.querySelector(`[data-week="${next}"]`)?.focus()
+    stripEl()?.querySelector(`[data-week="${next}"]`)?.focus()
   })
 }
 
@@ -43,28 +56,27 @@ watch(() => props.selected, (week) => nextTick(() => center(week, true)))
 </script>
 
 <template>
-  <div
+  <RadioGroupRoot
     ref="scroller"
     class="week-strip"
-    role="tablist"
+    orientation="horizontal"
+    :loop="false"
+    :model-value="selected"
     aria-label="Недели с 4-й по 40-ю"
+    @update:model-value="onSelect"
     @keydown="onKeydown"
   >
-    <button
+    <RadioGroupItem
       v-for="week in weeks"
       :key="week"
-      type="button"
       class="week-chip"
-      role="tab"
+      :value="week"
       :data-week="week"
-      :aria-selected="week === selected"
       aria-controls="week-panel"
       :aria-label="chipLabel(week)"
-      :tabindex="week === selected ? 0 : -1"
-      @click="emit('select', week)"
     >
       {{ week }}
       <span v-if="week === marker && week !== selected" class="today-dot" aria-hidden="true"></span>
-    </button>
-  </div>
+    </RadioGroupItem>
+  </RadioGroupRoot>
 </template>

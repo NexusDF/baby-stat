@@ -72,8 +72,7 @@ h2 {
 }
 
 button:focus-visible,
-input:focus-visible,
-.segment label:focus-within {
+input:focus-visible {
   outline: 2px solid var(--rose);
   outline-offset: 3px;
 }
@@ -120,7 +119,7 @@ input:focus-visible,
   font-weight: 600;
 }
 
-.bar button[aria-current="page"] {
+.bar button[data-state="active"] {
   background: var(--chip-bg);
   color: var(--chip-ink);
 }
@@ -325,7 +324,7 @@ input:focus-visible,
   scroll-snap-align: center;
 }
 
-.week-chip[aria-selected="true"] {
+.week-chip[data-state="checked"] {
   background: var(--chip-bg);
   color: var(--chip-ink);
 }
@@ -498,27 +497,23 @@ input:focus-visible,
   background: var(--stat);
 }
 
-.segment label {
-  position: relative;
+.segment button {
   display: grid;
   place-items: center;
+  width: 100%;
   min-height: 44px;
+  padding: 0;
+  border: 0;
   border-radius: 999px;
+  background: transparent;
   color: var(--muted);
   font-weight: 700;
   text-align: center;
 }
 
-.segment label.on {
+.segment button[data-state="checked"] {
   background: var(--chip-bg);
   color: var(--chip-ink);
-}
-
-.segment input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  margin: 0;
 }
 
 .lmp { display: grid; gap: 6px; }

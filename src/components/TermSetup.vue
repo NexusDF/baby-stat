@@ -1,4 +1,5 @@
 <script setup>
+import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { computed } from 'vue'
 import { formatDate, interpretTerm, toISODate, weeksPhrase } from '../lib/pregnancy.js'
 
@@ -41,29 +42,16 @@ function onSource(next) {
       Срок считают от первого дня последних месячных. Если известна только предполагаемая дата родов, мы отнимаем от неё 280 дней — так обычно делает и врач. При следующем запуске откроется ваша текущая неделя.
     </p>
 
-    <fieldset class="segment">
-      <legend class="sr">От чего считать</legend>
-      <label :class="{ on: source === 'lmp' }">
-        <input
-          type="radio"
-          name="term-source"
-          value="lmp"
-          :checked="source === 'lmp'"
-          @change="onSource('lmp')"
-        >
-        Месячные
-      </label>
-      <label :class="{ on: source === 'edd' }">
-        <input
-          type="radio"
-          name="term-source"
-          value="edd"
-          :checked="source === 'edd'"
-          @change="onSource('edd')"
-        >
-        Дата родов
-      </label>
-    </fieldset>
+    <RadioGroupRoot
+      class="segment"
+      :model-value="source"
+      orientation="horizontal"
+      aria-label="От чего считать"
+      @update:model-value="onSource"
+    >
+      <RadioGroupItem value="lmp">Месячные</RadioGroupItem>
+      <RadioGroupItem value="edd">Дата родов</RadioGroupItem>
+    </RadioGroupRoot>
 
     <label class="lmp">
       <span>{{ fieldLabel }}</span>
