@@ -91,12 +91,58 @@ input:focus-visible {
   gap: 18px;
 }
 
+.mast {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 12px;
+}
+
 .brand {
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--rose-deep);
+}
+
+.tg-daily-wrap { display: contents; }
+
+.tg-daily {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--rose-deep);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.tg-daily svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.tg-note {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.tg-note a {
+  color: var(--rose-deep);
+  font-weight: 700;
+}
+
+@media (max-width: 420px) {
+  .mast { grid-template-columns: 1fr; }
+  .tg-daily { justify-self: start; }
 }
 
 .bar {

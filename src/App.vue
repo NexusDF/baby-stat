@@ -2,6 +2,7 @@
 import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { computed, ref, watch, watchEffect } from 'vue'
 import FetusStage from './components/FetusStage.vue'
+import TelegramDaily from './components/TelegramDaily.vue'
 import TermSetup from './components/TermSetup.vue'
 import WeekList from './components/WeekList.vue'
 import WeekPanel from './components/WeekPanel.vue'
@@ -135,7 +136,10 @@ function onTouchCancel() {
 
 <template>
   <main class="shell">
-    <p class="brand">Булочка</p>
+    <header class="mast">
+      <p class="brand">Булочка</p>
+      <TelegramDaily :source="source" :iso="iso" />
+    </header>
     <TabsRoot v-model="view" as-child activation-mode="manual">
       <TabsList class="bar" as="nav" aria-label="Разделы">
         <TabsTrigger value="week">Неделя</TabsTrigger>
