@@ -38,6 +38,7 @@ jobs:
         run: npm run build
         env:
           PAGES_BASE: ${{ steps.pages.outputs.base_path }}
+          VITE_TELEGRAM_BOT: bulo44kaa_bot
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
