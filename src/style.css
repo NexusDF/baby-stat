@@ -206,6 +206,8 @@ input:focus-visible {
 
 .age-note { color: var(--rose-deep); }
 
+.top > .age-note { min-height: 1.5em; }
+
 .swipe-zone { display: grid; gap: 8px; }
 
 .stage-wrap { position: relative; }

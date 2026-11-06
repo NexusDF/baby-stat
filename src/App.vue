@@ -165,7 +165,7 @@ function onTouchCancel() {
           <span> · ПДР {{ formatDate(term.due) }}</span>
         </p>
         <p v-else-if="term.status === 'empty'" class="due">Укажите дату во вкладке «Срок» — тогда откроется ваша неделя и отсчёт до родов.</p>
-        <p v-if="message" class="age-note">{{ message }}</p>
+        <p class="age-note" :aria-hidden="message ? undefined : true">{{ message }}</p>
       </header>
 
       <div
