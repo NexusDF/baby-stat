@@ -1,6 +1,8 @@
 <script setup>
+import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { computed, ref, watch, watchEffect } from 'vue'
 import FetusStage from './components/FetusStage.vue'
+import TelegramDaily from './components/TelegramDaily.vue'
 import TermSetup from './components/TermSetup.vue'
 import WeekList from './components/WeekList.vue'
 import WeekPanel from './components/WeekPanel.vue'
@@ -134,12 +136,17 @@ function onTouchCancel() {
 
 <template>
   <main class="shell">
-    <p class="brand">Булочка</p>
-    <nav class="bar" aria-label="Разделы">
-      <button type="button" :aria-current="view === 'week' ? 'page' : undefined" @click="view = 'week'">Неделя</button>
-      <button type="button" :aria-current="view === 'list' ? 'page' : undefined" @click="view = 'list'">Все недели</button>
-      <button type="button" :aria-current="view === 'term' ? 'page' : undefined" @click="view = 'term'">Срок</button>
-    </nav>
+    <header class="mast">
+      <p class="brand">Булочка</p>
+      <TelegramDaily :source="source" :iso="iso" />
+    </header>
+    <TabsRoot v-model="view" as-child activation-mode="manual">
+      <TabsList class="bar" as="nav" aria-label="Разделы">
+        <TabsTrigger value="week">Неделя</TabsTrigger>
+        <TabsTrigger value="list">Все недели</TabsTrigger>
+        <TabsTrigger value="term">Срок</TabsTrigger>
+      </TabsList>
+    </TabsRoot>
 
     <template v-if="view === 'week'">
       <header class="top">
@@ -162,7 +169,7 @@ function onTouchCancel() {
           <span> · ПДР {{ formatDate(term.due) }}</span>
         </p>
         <p v-else-if="term.status === 'empty'" class="due">Укажите дату во вкладке «Срок» — тогда откроется ваша неделя и отсчёт до родов.</p>
-        <p v-if="message" class="age-note">{{ message }}</p>
+        <p class="age-note" :aria-hidden="message ? undefined : true">{{ message }}</p>
       </header>
 
       <div
