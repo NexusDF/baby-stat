@@ -30,7 +30,10 @@
   -webkit-font-smoothing: antialiased;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
 body {
   margin: 0;
@@ -121,7 +124,15 @@ input:focus-visible {
   font-size: 0.82rem;
   font-weight: 700;
   line-height: 1.1;
+  text-decoration: none;
 }
+
+.tg-daily[aria-disabled='true'] {
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+.tg-daily span { white-space: nowrap; }
 
 .tg-daily svg {
   width: 18px;
@@ -138,11 +149,6 @@ input:focus-visible {
 .tg-note a {
   color: var(--rose-deep);
   font-weight: 700;
-}
-
-@media (max-width: 420px) {
-  .mast { grid-template-columns: 1fr; }
-  .tg-daily { justify-self: start; }
 }
 
 .bar {

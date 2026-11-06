@@ -1,6 +1,15 @@
 <script setup>
-import { ref } from 'vue'
-import { buildDailyLink, openTelegram, rememberClientId, shareableLmp } from '../lib/telegramLink.js'
+import { computed, ref } from 'vue'
+import {
+  botStartUrl,
+  buildDailyLink,
+  DEFAULT_BOT,
+  isPhone,
+  launchPhone,
+  rememberClientId,
+  shareableLmp,
+  usableApiBase,
+} from '../lib/telegramLink.js'
 
 const props = defineProps({
   source: { type: String, required: true },
@@ -11,11 +20,19 @@ const busy = ref(false)
 const note = ref('')
 const href = ref('')
 
-const username = import.meta.env.VITE_TELEGRAM_BOT || ''
-const apiBase = import.meta.env.VITE_LINK_API || ''
+const username = import.meta.env.VITE_TELEGRAM_BOT || DEFAULT_BOT
+const apiBase = usableApiBase(import.meta.env.VITE_LINK_API || '', window.location.hostname)
+const homeUrl = computed(() => botStartUrl(username))
 
-async function openDaily() {
+async function openDaily(event) {
+  event?.preventDefault()
   if (busy.value) return
+  if (!homeUrl.value) {
+    note.value = 'Бот ещё не подключён. Когда появится имя бота, кнопка откроет его.'
+    return
+  }
+  const phone = isPhone(navigator.userAgent, navigator.maxTouchPoints)
+  const popup = phone ? null : window.open('', '_blank')
   busy.value = true
   note.value = ''
   href.value = ''
@@ -27,25 +44,25 @@ async function openDaily() {
       clientId: rememberClientId(),
     })
     if (result.error === 'unconfigured') {
+      popup?.close()
       note.value = 'Бот ещё не подключён. Когда появится имя бота, кнопка откроет его.'
       return
     }
     href.value = result.url
-    const opened = openTelegram(result.url)
-    if (result.via === 'fallback') {
-      note.value = opened
-        ? 'Сервер ссылки не ответил, поэтому дата в бота не передалась. Введите её там. Если Telegram не установлен, откройте веб-версию.'
-        : 'Не удалось открыть вкладку, а дата в ссылку не попала. Откройте бота в браузере и введите дату там.'
+    if (phone) {
+      launchPhone(result.url, navigator.userAgent)
       return
     }
-    if (!opened) {
-      note.value = 'Браузер не открыл вкладку. Если Telegram не установлен, откройте веб-версию по ссылке или установите приложение.'
+    if (popup && !popup.closed) {
+      popup.location.replace(result.url)
+      note.value = result.hasDate
+        ? 'Открыли Telegram со сроком из приложения. Если приложения нет, на странице будет предложение его установить.'
+        : 'Открыли Telegram. Дату месячных бот спросит сам.'
       return
     }
-    note.value = result.hasDate
-      ? 'Открыли Telegram со сроком из приложения. Если приложения нет, на странице будет веб-версия и предложение установить его.'
-      : 'Открыли Telegram. Дату месячных бот спросит сам. Если приложения нет, откроется веб-версия.'
+    note.value = 'Браузер не открыл окно. Нажмите ссылку ниже: на телефоне она откроет Telegram.'
   } catch {
+    popup?.close()
     note.value = 'Не удалось открыть бота. Попробуйте ещё раз чуть позже.'
   } finally {
     busy.value = false
@@ -55,7 +72,22 @@ async function openDaily() {
 
 <template>
   <div class="tg-daily-wrap">
-    <button class="tg-daily" type="button" :disabled="busy" @click="openDaily">
+    <a
+      v-if="homeUrl"
+      class="tg-daily"
+      :href="homeUrl"
+      :aria-disabled="busy ? 'true' : undefined"
+      @click="openDaily"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M21.5 4.4 2.7 11.2c-1.3.5-1.2 1.2-.2 1.5l4.8 1.5 1.9 5.8c.2.7.1 1 .9.9.6 0 .8-.2 1.1-.6l2.7-2.6 4.9 3.6c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.2-.5-1.8-1.4-1.5ZM8.8 14.2l9.4-5.9c.5-.3.9-.1.5.2l-7.8 7-.3 3.2-2.1-4.5Z"
+        />
+      </svg>
+      <span>Малыш каждый день</span>
+    </a>
+    <button v-else class="tg-daily" type="button" @click="openDaily">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path
           fill="currentColor"
@@ -66,7 +98,7 @@ async function openDaily() {
     </button>
     <p v-if="note" class="tg-note" role="status">
       {{ note }}
-      <a v-if="href" :href="href" target="_blank" rel="noopener noreferrer">Открыть в браузере</a>
+      <a v-if="href" :href="href">Открыть Telegram</a>
     </p>
   </div>
 </template>

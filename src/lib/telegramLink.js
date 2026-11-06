@@ -2,6 +2,23 @@ import { interpretTerm, toISODate } from './pregnancy.js'
 
 const MAX_GESTATION_DAYS = 42 * 7
 const CLIENT_KEY = 'baby-stat-client'
+export const DEFAULT_BOT = 'bulo44kaa_bot'
+
+function isLoopback(host) {
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1'
+}
+
+// Адрес 127.0.0.1 с телефона — это сам телефон, а не компьютер, где запущен сервис ссылок.
+export function usableApiBase(apiBase, pageHost = '') {
+  if (!apiBase) return ''
+  try {
+    const host = new URL(apiBase).hostname
+    if (isLoopback(host) && pageHost && !isLoopback(pageHost)) return ''
+  } catch {
+    return ''
+  }
+  return apiBase
+}
 
 export function shareableLmp(source, iso, now = new Date()) {
   const term = interpretTerm(source, iso, now)
@@ -57,7 +74,48 @@ export async function buildDailyLink({
   }
 }
 
-export function openTelegram(url) {
-  const opened = window.open(url, '_blank', 'noopener,noreferrer')
-  return Boolean(opened)
+export function isPhone(userAgent = '', maxTouchPoints = 0) {
+  if (/Android|iPhone|iPad|iPod/i.test(userAgent)) return true
+  return /Macintosh/i.test(userAgent) && maxTouchPoints > 1
+}
+
+// iPhone открывает приложение схемой tg://. Android — intent, и если Telegram
+// не установлен, сам уходит на https. https://t.me из window.open телефон блокирует.
+export function phoneTargets(httpsUrl, userAgent = '') {
+  const url = new URL(httpsUrl)
+  const domain = url.pathname.replace(/^\//, '')
+  const start = url.searchParams.get('start')
+  const startQuery = start ? `&start=${encodeURIComponent(start)}` : ''
+  if (/Android/i.test(userAgent)) {
+    const fallback = encodeURIComponent(httpsUrl)
+    return {
+      primary: `intent://resolve?domain=${encodeURIComponent(domain)}${startQuery}#Intent;scheme=tg;package=org.telegram.messenger;S.browser_fallback_url=${fallback};end`,
+      fallback: null,
+    }
+  }
+  return {
+    primary: `tg://resolve?domain=${encodeURIComponent(domain)}${startQuery}`,
+    fallback: httpsUrl,
+  }
+}
+
+export function launchPhone(httpsUrl, userAgent = '', deps = {}) {
+  const assign = deps.assign || ((next) => window.location.assign(next))
+  const { primary, fallback } = phoneTargets(httpsUrl, userAgent)
+  if (!fallback) {
+    assign(primary)
+    return
+  }
+  const doc = deps.document || document
+  const schedule = deps.setTimeout || window.setTimeout.bind(window)
+  const cancel = deps.clearTimeout || window.clearTimeout.bind(window)
+  const timer = schedule(() => {
+    if (!doc.hidden) assign(fallback)
+  }, 900)
+  const stop = () => cancel(timer)
+  doc.addEventListener?.('visibilitychange', () => {
+    if (doc.hidden) stop()
+  }, { once: true })
+  doc.defaultView?.addEventListener?.('pagehide', stop, { once: true })
+  assign(primary)
 }
